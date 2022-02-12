@@ -53,6 +53,7 @@
         flat: yes
       with_items:
         - "{{ log_result.stdout | from_json }}"
+      when : "lookup('config', 'DEFAULT_LOG_PATH') | default('', true) | length > 0"
 
     - name: Enable AutoAdminLogon
       win_regedit:
@@ -131,22 +132,31 @@
 
   rescue:
 
-    - name: Get log path for hardening
-      win_shell: |
-        $Result = Get-Content "{{ psm_hardening_log }}"
-        Write-Output $Result
-      register: log_result
+    - name: Rescue - Try to fetch remote logs onto the host
+      block:
+        - name: Get log path for hardening
+          win_shell: |
+            $Result = Get-Content "{{ psm_hardening_log }}"
+            Write-Output $Result
+          register: log_result
 
-    - name: Fetch hardening log from path
-      fetch:
-        src: '{{ item.logPath }}'
-        dest: '{{ lookup("config", "DEFAULT_LOG_PATH") | dirname }}/psm/{{ inventory_hostname }}_hardening.log'
-        flat: yes
-      with_items:
-        - "{{ log_result.stdout | from_json }}"
+        - name: Fetch hardening log from path
+          fetch:
+            src: '{{ item.logPath }}'
+            dest: '{{ lookup("config", "DEFAULT_LOG_PATH") | dirname }}/psm/{{ inventory_hostname }}_hardening.log'
+            flat: yes
+          with_items:
+            - "{{ log_result.stdout | from_json }}"
 
-    - fail:
-        msg: 'ERROR: Hardening failed. For more info check {{ lookup("config", "DEFAULT_LOG_PATH") | dirname }}/psm/{{ inventory_hostname }}_hardening.log'
+        - name: Rescue - Fail hardening stage
+          fail:
+            msg: 'ERROR: Hardening failed. For more info check {{ lookup("config", "DEFAULT_LOG_PATH") | dirname }}/psm/{{ inventory_hostname }}_hardening.log'
+      when : "lookup('config', 'DEFAULT_LOG_PATH') | default('', true) | length > 0"
+
+    - name: Rescue - Fail hardening stage
+      fail:
+        msg: 'ERROR: Hardening failed. For more info check the logs on the remote machine.'
+      when : "lookup('config', 'DEFAULT_LOG_PATH') | default('', true) | length == 0"
 
 - name: Validate PSM hardening
   win_shell: |

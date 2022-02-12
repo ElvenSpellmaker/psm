@@ -49,6 +49,7 @@
         flat: yes
       with_items:
         - "{{ log_result.stdout | from_json }}"
+      when : "lookup('config', 'DEFAULT_LOG_PATH') | default('', true) | length > 0"
 
     - name: Enable AutoAdminLogon
       win_regedit:
@@ -127,22 +128,31 @@
 
   rescue:
 
-    - name: Get log path for installation
-      win_shell: |
-        $Result = Get-Content "{{ psm_install_log }}"
-        Write-Output $Result
-      register: log_result
+    - name: Rescue - Try to fetch remote logs onto the host
+      block:
+        - name: Get log path for installation
+          win_shell: |
+            $Result = Get-Content "{{ psm_install_log }}"
+            Write-Output $Result
+          register: log_result
 
-    - name: Fetch installation log from path
-      fetch:
-        src: '{{ item.logPath }}'
-        dest: '{{ lookup("config", "DEFAULT_LOG_PATH") | dirname }}/psm/{{ inventory_hostname }}_install.log'
-        flat: yes
-      with_items:
-        - "{{ log_result.stdout | from_json }}"
+        - name: Fetch installation log from path
+          fetch:
+            src: '{{ item.logPath }}'
+            dest: '{{ lookup("config", "DEFAULT_LOG_PATH") | dirname }}/psm/{{ inventory_hostname }}_install.log'
+            flat: yes
+          with_items:
+            - "{{ log_result.stdout | from_json }}"
 
-    - fail:
-        msg: 'ERROR: Installation failed. For more info check {{ lookup("config", "DEFAULT_LOG_PATH") | dirname }}/psm/{{ inventory_hostname }}_install.log'
+        - name: Rescue - Fail installation stage
+          fail:
+            msg: 'ERROR: Installation failed. For more info check {{ lookup("config", "DEFAULT_LOG_PATH") | dirname }}/psm/{{ inventory_hostname }}_install.log'
+      when : "lookup('config', 'DEFAULT_LOG_PATH') | default('', true) | length > 0"
+
+    - name: Rescue - Fail installation stage
+      fail:
+        msg: 'ERROR: Installation failed. For more info check the logs on the remote machine.'
+      when : "lookup('config', 'DEFAULT_LOG_PATH') | default('', true) | length == 0"
 
 - name: check PSM service status
   win_service:
