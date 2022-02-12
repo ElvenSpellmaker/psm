@@ -13,17 +13,19 @@ This Ansible Role will deploy and install CyberArk Privileged Session Manager in
   - 1858 port outbound
 - Administrator access to the remote host
 - PSM CD image
+- .NET 4.8
 
 
 ### Flow Variables
 Variable                         | Required     | Default                                   | Comments
 :--------------------------------|:-------------|:------------------------------------------|:---------
+psm_extract                      | no           | false                                     | Copies zip from host to remote, extracts, sets up install dir
 psm_prerequisites                | no           | false                                     | Install PSM pre requisites
 psm_install                      | no           | false                                     | Install PSM
 psm_postinstall                  | no           | false                                     | PSM post install role
 psm_hardening                    | no           | false                                     | Apply PSM hardening
 psm_registration                 | no           | false                                     | Connect PSM to the Vault
-psm_clean                        | no           | false                                     | N/A
+psm_clean                        | no           | false                                     | Cleans install logs etc
 
 ### Deployment Variables
 Variable                         | Required     | Default                                              | Comments
@@ -43,9 +45,24 @@ psm_out_of_domain                | no           | false                         
 ## Dependencies
 None
 
+
+    psm_extract: false
+    psm_prerequisites: true
+    psm_install: true
+    psm_postinstall: true
+    psm_hardening: true
+    psm_registration: true
+    psm_clean: true
 ## Usage
-The role consists of a number of different tasks which can be enabled or disabled for the particular
-run.
+The role consists of a number of different tasks some of which can be enabled
+or disabled for the particular run.
+
+`psm_validateparameters` - Mandatory
+
+This task will validate which PSM steps have already occurred on the server to prevent repetition.
+
+`psm_extract`
+This task will copy the CD Image from the Ansible host to the remote.
 
 `psm_prerequisites`
 
@@ -66,10 +83,6 @@ This task will run the PSM hardening process.
 `psm_registration`
 
 This task will perform registration with active Vault.
-
-`psm_validateparameters`
-
-This task will validate which PSM steps have already occurred on the server to prevent repetition.
 
 `psm_clean`
 
