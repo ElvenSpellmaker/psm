@@ -136,7 +136,7 @@
             Write-Output $Result
           register: log_result
 
-        - name: Fetch installation log from path
+        - name: Rescue - Fetch installation log from path
           fetch:
             src: '{{ item.logPath }}'
             dest: '{{ lookup("config", "DEFAULT_LOG_PATH") | dirname }}/psm/{{ inventory_hostname }}_install.log'

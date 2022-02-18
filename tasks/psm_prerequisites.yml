@@ -10,7 +10,7 @@
         $step1 = $xml.SelectSingleNode("//Step[@Name = 'DisableNLA']")
         $step1.Enable = 'Yes'
         $step2 = $xml.SelectSingleNode("//Step[@Name = 'UpdateRDSSecurityLayer']")
-        $step2.Enable = 'Yes'
+        $step2.Enable = 'No'
         $xml.Save($filePath)
         exit 0
     }
