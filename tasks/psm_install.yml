@@ -161,4 +161,4 @@
 
 - set_fact:
     psm_exists: "{{ psm_service_info.exists }}"
-    fact_psm_installation_path: "{{ psm_installation_path }}"
+    fact_psm_installation_path: "{{ psm_installation_path }}\\PSM"
